@@ -147,4 +147,24 @@ contract NFTMarketplaceTest is Test {
         assertEq(sellerBalanceBefore, sellerBalanceAfter - LIST_PRICE);
         vm.stopPrank();
     }
+
+    function testFail_WithdrawNFTAfterSold() public {
+        simpleNFT.safeTransferFrom(address(this), address(1), 1);
+        assertEq(simpleNFT.ownerOf(1), address(1));
+
+        vm.startPrank(address(1));
+        bytes memory encodedPrice = abi.encode(LIST_PRICE);
+        simpleNFT.safeTransferFrom(address(1), address(nftMarketplace), 1, encodedPrice);
+        assertEq(simpleNFT.ownerOf(1), address(nftMarketplace));
+        vm.stopPrank();
+
+        vm.startPrank(address(2));
+        vm.deal(address(2), 1 ether);
+        nftMarketplace.buy{ value: 0.1 ether }(address(simpleNFT), 1);
+        vm.stopPrank();
+
+        vm.startPrank(address(1));
+        nftMarketplace.withdraw(address(simpleNFT), 1);
+        vm.stopPrank();
+    }
 }
